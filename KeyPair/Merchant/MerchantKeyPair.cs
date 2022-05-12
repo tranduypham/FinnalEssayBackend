@@ -11,5 +11,9 @@ namespace Backend.KeyPair.Merchant
             var str = File.ReadAllText("./KeyPair/Merchant/private.pem");
             return str;
         }
+        public static byte[] CertReader (){
+            var bytes = File.ReadAllBytes("./KeyPair/Merchant/merchant.cer");
+            return bytes;
+        }
     }
 }

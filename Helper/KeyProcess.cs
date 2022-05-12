@@ -9,6 +9,7 @@ using Backend.KeyPair.ClientBank;
 using Backend.KeyPair.Merchant;
 using Backend.KeyPair.MerchantBank;
 using Backend.Helper;
+using Backend.KeyPair.Gateway;
 
 namespace Backend.Helper
 {
@@ -38,6 +39,11 @@ namespace Backend.Helper
                     {
                         Console.WriteLine(keyName);
                         return MerchantBankKeyPair.PrivatePem();
+                    }
+                case "gateway":
+                    {
+                        Console.WriteLine(keyName);
+                        return GatewayKeyPair.PrivatePem();
                     }
                 default:
                     {

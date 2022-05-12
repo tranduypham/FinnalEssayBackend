@@ -46,6 +46,18 @@ namespace Backend.Controllers
             return BadRequest(new {mess = "Wrong PIN code"});
         }
         
-
+        [HttpGet("Gen_Random_Num")]
+        public ActionResult<string> GetRandNumber()
+        {
+            return null;
+        }
+        
+        
+        [HttpGet("Pre_Master_secret")]
+        public ActionResult<string> GetPreMasterSecret()
+        {
+            return null;
+        }
+        
     }
 }

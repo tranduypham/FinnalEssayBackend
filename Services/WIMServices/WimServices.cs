@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Backend.DTO;
 using Backend.Models;
 using Backend.Repository;
 using Backend.Services.Encryption;
@@ -18,7 +19,7 @@ namespace Backend.Services.WIMServices
             _bankInfoRepo = bankInfoRepo;
             _enc = enc;
         }
-        public string? GetBankingInfo(string KeyName)
+        public BankingInfoDto? GetBankingInfo(string KeyName)
         {
             var temp = KeyName.ToLower();
             switch (temp)
@@ -28,14 +29,18 @@ namespace Backend.Services.WIMServices
                         var bankInfo = _bankInfoRepo.Get("1255070770448");
                         if (bankInfo == null) return null;
                         var sign = _enc.SignData("client_bank", JsonSerializer.Serialize(bankInfo));
-                        return _enc.EncryptData(
-                            "client",
-                            JsonSerializer.Serialize(new {
-                                BankInfo = bankInfo,
+                        // return _enc.EncryptData(
+                        //     "client",
+                        //     JsonSerializer.Serialize(new {
+                        //         BankInfo = bankInfo,
+                        //         Signature = sign
+                        //     }),
+                        //     true
+                        // );
+                        return new BankingInfoDto() {
+                                BankingInfo = bankInfo,
                                 Signature = sign
-                            }),
-                            true
-                        );
+                            };
                     }
 
                 case "merchant":
@@ -43,14 +48,18 @@ namespace Backend.Services.WIMServices
                         var bankInfo = _bankInfoRepo.Get("7467811997849");
                         if (bankInfo == null) return null;
                         var sign = _enc.SignData("merchant_bank", JsonSerializer.Serialize(bankInfo));
-                        return _enc.EncryptData(
-                            "merchant",
-                            JsonSerializer.Serialize(new {
-                                BankInfo = bankInfo,
+                        // return _enc.EncryptData(
+                        //     "merchant",
+                        //     JsonSerializer.Serialize(new {
+                        //         BankInfo = bankInfo,
+                        //         Signature = sign
+                        //     }),
+                        //     true
+                        // );
+                        return new BankingInfoDto() {
+                                BankingInfo = bankInfo,
                                 Signature = sign
-                            }),
-                            true
-                        );
+                            };
                     }
 
                 default:

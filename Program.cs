@@ -1,5 +1,6 @@
 using Backend.Models;
 using Backend.Repository;
+using Backend.Services.Certificate;
 using Backend.Services.Encryption;
 using Backend.Services.WIMServices;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddTransient<IEncryptionServices, EncryptionServices>();
 builder.Services.AddTransient<IBankingInfoRepo, BankingInfoRepo>();
 builder.Services.AddTransient<IWimServices, WimServices>();
+builder.Services.AddTransient<ICertificateServices, CertificateServices>();
 
 builder.Services.AddDbContext<SWPPDbContext>((options) => options.UseSqlServer("name=ConnectionStrings:DefaultConnection"));
 

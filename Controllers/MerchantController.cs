@@ -9,6 +9,8 @@ using Backend.Services.Encryption;
 using Backend.Services.WIMServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Backend.DTO;
+using System.Text;
 
 namespace Backend.Controllers
 {
@@ -26,14 +28,15 @@ namespace Backend.Controllers
             _wim = wim;
         }
 
-        private string EncBankingInfo (string Owner, string BankName, string indicate = INDICATE) {
-            var BankInfo = _wim.GetBankingInfo(Owner);
-            var encMerchantBankingInfo_Part1 =  _enc.EncryptData(
+        private string EncBankingInfo(string Owner, string BankName, string indicate = INDICATE)
+        {
+            var BankInfo = JsonSerializer.Serialize(_wim.GetBankingInfo(Owner));
+            var encMerchantBankingInfo_Part1 = _enc.EncryptData(
                 BankName,
                 BankInfo.Substring(0, 500),
                 false
             );
-            var encMerchantBankingInfo_Part2 =  _enc.EncryptData(
+            var encMerchantBankingInfo_Part2 = _enc.EncryptData(
                 BankName,
                 BankInfo.Substring(500),
                 false
@@ -41,7 +44,8 @@ namespace Backend.Controllers
             return encMerchantBankingInfo_Part1 + indicate + encMerchantBankingInfo_Part2;
         }
 
-        private string DecryptBankInfo (string data, string Owner, string BankName, string indicate = INDICATE){
+        private BankingInfoDto DecryptBankInfo(string data, string Owner, string BankName, string indicate = INDICATE)
+        {
             var encBankingInfo = data;
             var encBankingInfo_Part1 = data.Split(indicate)[0];
             var encBankingInfo_Part2 = data.Split(indicate)[1];
@@ -55,8 +59,28 @@ namespace Backend.Controllers
                 encBankingInfo_Part2,
                 false
             );
-            return BankingInfo_Part1 + BankingInfo_Part2;
+            var utf8_byte = Encoding.UTF8.GetBytes(BankingInfo_Part1 + BankingInfo_Part2);
+            var utf8_string = Encoding.UTF8.GetString(utf8_byte);
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+            };
+            return JsonSerializer.Deserialize<BankingInfoDto>(utf8_string, options);
         }
+
+        [HttpPost("Try_Decrypt_Banking_Info")]
+        public ActionResult<BankingInfoDto> PostBankingInfoDto(string encBankInfo, string KeyName)
+        {
+            try
+            {
+                return DecryptBankInfo(encBankInfo, KeyName, "client_bank");
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
+        }
+
 
         [HttpPost("SendInvoice")]
         public ActionResult<Object> PostInvoiceToMerchant(PaymentInfo PI)
@@ -76,7 +100,7 @@ namespace Backend.Controllers
             var encMerchantBankingInfo = this.EncBankingInfo("merchant", "client_bank");
 
             var encInvoice = _enc.EncryptData(
-                "merchant",
+                "client",
                 JsonSerializer.Serialize(
                     PI.Invoice
                 ),

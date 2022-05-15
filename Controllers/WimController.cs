@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Backend.DTO;
+using Backend.Models;
 using Backend.Services.Encryption;
 using Backend.Services.WIMServices;
 using Microsoft.AspNetCore.Mvc;
@@ -47,16 +48,28 @@ namespace Backend.Controllers
         }
         
         [HttpGet("Gen_Random_Num")]
-        public ActionResult<string> GetRandNumber()
+        public ActionResult<string> GetRandNumber(int length)
         {
-            return null;
+            return _wim.RandNumString(length);
         }
-        
         
         [HttpGet("Pre_Master_secret")]
         public ActionResult<string> GetPreMasterSecret()
         {
-            return null;
+            return _wim.genPreMasterSecret();
+        }
+        
+        [HttpGet("Master_secret")]
+        public ActionResult<string> GetMasterSecret(string Pre_Master_Secret, string RandString)
+        {
+            return _wim.genMasterSecret(Pre_Master_Secret, RandString);
+        }
+        
+        
+        [HttpGet("Session_Key")]
+        public ActionResult<SessionKey> GetSessionKey(string Master_Secret, string RandString)
+        {
+            return _wim.genSessionKey(Master_Secret, RandString);
         }
         
     }

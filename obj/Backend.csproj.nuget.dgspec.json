@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "e:\\Do an\\Backend\\Backend.csproj": {}
+    "E:\\Do an\\Backend\\Backend.csproj": {}
   },
   "projects": {
-    "e:\\Do an\\Backend\\Backend.csproj": {
+    "E:\\Do an\\Backend\\Backend.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "e:\\Do an\\Backend\\Backend.csproj",
+        "projectUniqueName": "E:\\Do an\\Backend\\Backend.csproj",
         "projectName": "Backend",
-        "projectPath": "e:\\Do an\\Backend\\Backend.csproj",
+        "projectPath": "E:\\Do an\\Backend\\Backend.csproj",
         "packagesPath": "C:\\Users\\DELL\\.nuget\\packages\\",
-        "outputPath": "e:\\Do an\\Backend\\obj\\",
+        "outputPath": "E:\\Do an\\Backend\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "G:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

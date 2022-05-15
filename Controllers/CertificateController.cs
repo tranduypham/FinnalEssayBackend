@@ -24,12 +24,12 @@ namespace Backend.Controllers
         public ActionResult<CertificateInfo> GetCert(CertDataInputDto certDto)
         {
             try{
-                if(certDto.RawDataBase64 != null){
+                if(certDto.RawDataBase64 != null && certDto.RawDataBase64 != ""){
                     return Ok( _cert.ReadCert(certDto.RawDataBase64) );
                     // return Ok( "raw" );
                 }
                 
-                if(certDto.KeyName != null){
+                if(certDto.KeyName != null && certDto.KeyName != ""){
                     return Ok( _cert.ReadCert_KeyName(certDto.KeyName));
                     // return Ok( "key" );
                 }
@@ -43,12 +43,12 @@ namespace Backend.Controllers
         public ActionResult<CertificateInfo> VerifyCert(CertDataInputDto certDto)
         {
             try{
-                if(certDto.RawDataBase64 != null){
+                if(certDto.RawDataBase64 != null && certDto.RawDataBase64 != ""){
                     return Ok( _cert.Verify(certDto.RawDataBase64) );
                     // return Ok( "raw" );
                 }
                 
-                if(certDto.KeyName != null){
+                if(certDto.KeyName != null && certDto.KeyName != ""){
                     return Ok( _cert.Verify_KeyName(certDto.KeyName));
                     // return Ok( "key" );
                 }

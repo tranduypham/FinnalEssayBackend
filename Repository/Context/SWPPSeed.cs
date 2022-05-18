@@ -1,4 +1,5 @@
 using Backend.Models;
+using Backend.Repository.Entity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Repository
@@ -19,6 +20,20 @@ namespace Backend.Repository
                             ProfileNumber = "1255070770448"
                         }
                     );
+
+            modelBuiler.Entity<BankAccount>()
+                        .HasData(
+                            new BankAccount {
+                                ProfileNumber = "7467811997849",
+                                Balances = 999,
+                                Name = "Merchant"
+                            },
+                            new BankAccount {
+                                ProfileNumber = "1255070770448",
+                                Balances = 999,
+                                Name = "Client"
+                            }
+                        );
         }
     }
 }

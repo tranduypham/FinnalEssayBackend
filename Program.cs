@@ -15,6 +15,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddTransient<IEncryptionServices, EncryptionServices>();
 builder.Services.AddTransient<IBankingInfoRepo, BankingInfoRepo>();
+builder.Services.AddTransient<ISessionKeyRepo, SessionKeysRepo>();
 builder.Services.AddTransient<IWimServices, WimServices>();
 builder.Services.AddTransient<ICertificateServices, CertificateServices>();
 

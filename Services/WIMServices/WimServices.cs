@@ -6,8 +6,10 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Backend.DTO;
+using Backend.Helper;
 using Backend.Models;
 using Backend.Repository;
+using Backend.Repository.Entity;
 using Backend.Services.Encryption;
 
 namespace Backend.Services.WIMServices
@@ -16,10 +18,13 @@ namespace Backend.Services.WIMServices
     {
         IBankingInfoRepo _bankInfoRepo;
         IEncryptionServices _enc;
-        public WimServices(IBankingInfoRepo bankInfoRepo, IEncryptionServices enc)
+        ISessionKeyRepo _sessionDb;
+        public WimServices(IBankingInfoRepo bankInfoRepo, IEncryptionServices enc, ISessionKeyRepo sessionDb)
         {
             _bankInfoRepo = bankInfoRepo;
             _enc = enc;
+            _sessionDb = sessionDb;
+            // _aes = new AESProcess();
         }
         public BankingInfoDto? GetBankingInfo(string KeyName)
         {
@@ -83,25 +88,38 @@ namespace Backend.Services.WIMServices
             var byteRand = Encoding.ASCII.GetBytes(RandomString(length));
             return Convert.ToBase64String(byteRand);
         }
-        public string genPreMasterSecret() {
+        public string genPreMasterSecret()
+        {
             return this.RandNumString(20);
         }
-        public string genMasterSecret(string Pre_Master_Secret, string RandString) {
+        public string genMasterSecret(string Pre_Master_Secret, string RandString)
+        {
             var preMasterByte = Convert.FromBase64String(Pre_Master_Secret);
             var RandNumString = Encoding.ASCII.GetBytes(RandString);
             var MasterByte = this.PRF(preMasterByte, RandNumString, 20);
             return Convert.ToBase64String(MasterByte);
         }
-        public SessionKey genSessionKey (string Master_Secret_64, string RandString) {
+        public SessionKey genSessionKey(string Master_Secret_64, string RandString)
+        {
             var MasterByte = Convert.FromBase64String(Master_Secret_64);
             var RandNumString = Encoding.ASCII.GetBytes(RandString);
-            byte[] SessionByte = this.PRF(MasterByte, RandNumString, 20*4);
+            byte[] SessionByte = this.PRF(MasterByte, RandNumString, 20 * 4);
 
             var ClientWriteKey_byte = SessionByte.Take(20).ToArray();
             var ServerWriteKey_byte = SessionByte.Skip(20).Take(20).ToArray();
-            var ClientWriteMacKey_byte = SessionByte.Skip(20*2).Take(20).ToArray();
-            var ServerWriteMacKey_byte = SessionByte.Skip(20*3).Take(20).ToArray();
-            return new SessionKey(){
+            var ClientWriteMacKey_byte = SessionByte.Skip(20 * 2).Take(20).ToArray();
+            var ServerWriteMacKey_byte = SessionByte.Skip(20 * 3).Take(20).ToArray();
+            var sessionEntity = new SessionKeys()
+            {
+                ClientWriteKeyBase64 = Convert.ToBase64String(ClientWriteKey_byte),
+                ClientWriteMacKeyBase64 = Convert.ToBase64String(ClientWriteMacKey_byte),
+                ServerWriteMacKeyBase64 = Convert.ToBase64String(ServerWriteMacKey_byte),
+                ServerWriteKeyBase64 = Convert.ToBase64String(ServerWriteKey_byte),
+            };
+            _sessionDb.AddSessionKeys(sessionEntity);
+            return new SessionKey()
+            {
+                SessionID = sessionEntity.SessionID.ToString(),
                 ClientWriteKey64 = Convert.ToBase64String(ClientWriteKey_byte),
                 ClientWriteMacKey64 = Convert.ToBase64String(ClientWriteMacKey_byte),
                 ServerWriteMacKey64 = Convert.ToBase64String(ServerWriteMacKey_byte),
@@ -194,5 +212,100 @@ namespace Backend.Services.WIMServices
             return result.ToArray();
         }
 
+        // Ma hoa AES - HMAC la SHA256
+        public byte[] SymetricEncryption(string plaintText, string passwordBase64, string authPasswordBase64)
+        {
+            var password = Encoding.UTF8.GetString(Convert.FromBase64String(passwordBase64));
+            var authPassword = Encoding.UTF8.GetString(Convert.FromBase64String(authPasswordBase64));
+            return AESProcess.EncryptAESString(plaintText, password, authPassword);
+        }
+
+        public byte[] SymetricEncryption(string plaintText, string KeyName)
+        {
+            var sessionKeys = _sessionDb.getKey();
+            return WimSymetricEncryption(sessionKeys, plaintText, KeyName);
+        }
+
+        public byte[] SymetricEncryption(string plaintText, Guid sessionID, string KeyName)
+        {
+            var sessionKeys = _sessionDb.getKey(sessionID.ToString());
+            return WimSymetricEncryption(sessionKeys, plaintText, KeyName);
+        }
+        private byte[] WimSymetricEncryption(SessionKeys sessionKeys, string plaintText, string KeyName)
+        {
+            if (sessionKeys != null)
+            {
+                switch (KeyName)
+                {
+                    case "client":
+                        {
+                            var passwordBase64 = sessionKeys.ClientWriteKeyBase64;
+                            var authPasswordBase64 = sessionKeys.ClientWriteMacKeyBase64;
+                            var password = Encoding.UTF8.GetString(Convert.FromBase64String(passwordBase64));
+                            var authPassword = Encoding.UTF8.GetString(Convert.FromBase64String(authPasswordBase64));
+                            return AESProcess.EncryptAESString(plaintText, password, authPassword);
+                        }
+                    case "gateway":
+                        {
+                            var passwordBase64 = sessionKeys.ServerWriteKeyBase64;
+                            var authPasswordBase64 = sessionKeys.ServerWriteMacKeyBase64;
+                            var password = Encoding.UTF8.GetString(Convert.FromBase64String(passwordBase64));
+                            var authPassword = Encoding.UTF8.GetString(Convert.FromBase64String(authPasswordBase64));
+                            return AESProcess.EncryptAESString(plaintText, password, authPassword);
+                        }
+                    default:
+                        throw new CryptographicException();
+                }
+            }
+            throw new CryptographicException();
+        }
+
+        // Giai ma AES - HMAC la SHA256
+        public string SymetricDecryption(byte[] cipherText, string passwordBase64, string authPasswordBase64)
+        {
+            var password = Encoding.UTF8.GetString(Convert.FromBase64String(passwordBase64));
+            var authPassword = Encoding.UTF8.GetString(Convert.FromBase64String(authPasswordBase64));
+            return AESProcess.DecryptAESString(cipherText, password, authPassword);
+        }
+
+        public string SymetricDecryption(byte[] cipherText, string KeyName)
+        {
+            var sessionKeys = _sessionDb.getKey();
+            return WimSymetricDecryption (sessionKeys, cipherText, KeyName);
+        }
+
+        public string SymetricDecryption(byte[] cipherText, Guid SessionID, string KeyName)
+        {
+            var sessionKeys = _sessionDb.getKey(SessionID.ToString());
+            return WimSymetricDecryption (sessionKeys, cipherText, KeyName);
+        }
+        private string WimSymetricDecryption(SessionKeys sessionKeys, byte[] cipherText, string KeyName)
+        {
+            if (sessionKeys != null)
+            {
+                switch (KeyName.ToLower())
+                {
+                    case "client":
+                        {
+                            var passwordBase64 = sessionKeys.ClientWriteKeyBase64;
+                            var authPasswordBase64 = sessionKeys.ClientWriteMacKeyBase64;
+                            var password = Encoding.UTF8.GetString(Convert.FromBase64String(passwordBase64));
+                            var authPassword = Encoding.UTF8.GetString(Convert.FromBase64String(authPasswordBase64));
+                            return AESProcess.DecryptAESString(cipherText, password, authPassword);
+                        }
+                    case "gateway":
+                        {
+                            var passwordBase64 = sessionKeys.ServerWriteKeyBase64;
+                            var authPasswordBase64 = sessionKeys.ServerWriteMacKeyBase64;
+                            var password = Encoding.UTF8.GetString(Convert.FromBase64String(passwordBase64));
+                            var authPassword = Encoding.UTF8.GetString(Convert.FromBase64String(authPasswordBase64));
+                            return AESProcess.DecryptAESString(cipherText, password, authPassword);
+                        }
+                    default:
+                        throw new CryptographicException();
+                }
+            }
+            throw new CryptographicException();
+        }
     }
 }

@@ -1,10 +1,13 @@
 using Backend.Repository;
+using Backend.Repository.Entity;
 using Microsoft.EntityFrameworkCore;
 
-namespace Backend.Models {
-    public class SWPPDbContext : DbContext {
+namespace Backend.Models
+{
+    public class SWPPDbContext : DbContext
+    {
         public SWPPDbContext() { }
-        public SWPPDbContext(DbContextOptions<SWPPDbContext> options) : base (options) { }
+        public SWPPDbContext(DbContextOptions<SWPPDbContext> options) : base(options) { }
 
         // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         // {
@@ -12,9 +15,21 @@ namespace Backend.Models {
         // }
 
         public DbSet<BankingInfo> BankingInfos { get; set; }
+        public DbSet<SessionKeys> SessionKeys { get; set; }
+        public DbSet<BankAccount> BankAccounts { get; set; }
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder) {
-            modelBuilder.Entity<BankingInfo>().HasKey( x => x.BankId );
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<BankingInfo>().HasKey(x => x.BankId);
+
+            modelBuilder.Entity<BankAccount>().HasKey(x => x.ProfileNumber);
+            modelBuilder.Entity<BankAccount>()
+                        .HasOne<BankingInfo>()
+                        .WithOne()
+                        .HasForeignKey<BankingInfo>(x => x.ProfileNumber);
+
+            modelBuilder.Entity<SessionKeys>().HasKey( x => x.SessionID );
+
             SWPPSeed.Seed(modelBuilder);
         }
     }

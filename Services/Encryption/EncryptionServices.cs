@@ -41,7 +41,7 @@ namespace Backend.Services.Encryption
             {
                 this.GetKeys(KeyName);
                 byte[] result;
-                byte[] byteData = Encoding.ASCII.GetBytes(data);
+                byte[] byteData = Encoding.UTF8.GetBytes(data);
                 if (isPrivate)
                 {
                     result = KeyProcess.PrivareEncryption_RSA(rsa, byteData);
@@ -73,7 +73,7 @@ namespace Backend.Services.Encryption
                 {
                     result = rsa.Decrypt(byteData, RSAEncryptionPadding.Pkcs1);
                 }
-                return Encoding.ASCII.GetString(result);
+                return Encoding.UTF8.GetString(result);
             }
             catch (Exception e)
             {
@@ -85,9 +85,10 @@ namespace Backend.Services.Encryption
         {
             try
             {
+                Console.WriteLine("Du lieu ky so {0}", data);
                 this.GetKeys(KeyName);
                 byte[] result;
-                byte[] byteData = Encoding.ASCII.GetBytes(data);
+                byte[] byteData = Encoding.UTF8.GetBytes(data);
                 result = rsa.SignData(byteData, 0, byteData.Length, _hashAlName, _rsaSignPadd);
                 return Convert.ToBase64String(result);
             }
@@ -103,7 +104,7 @@ namespace Backend.Services.Encryption
             {
                 this.GetKeys(KeyName);
                 bool result;
-                byte[] byteData = Encoding.ASCII.GetBytes(data);
+                byte[] byteData = Encoding.UTF8.GetBytes(data);
                 byte[] byteSignature = Convert.FromBase64String(signature);
                 result = rsa.VerifyData(byteData, byteSignature, _hashAlName, RSASignaturePadding.Pkcs1);
                 return result;
@@ -117,7 +118,7 @@ namespace Backend.Services.Encryption
         public string HashData(string data)
         {
             var hasher = SHA256.Create();
-            byte[] byteData = Encoding.ASCII.GetBytes(data);
+            byte[] byteData = Encoding.UTF8.GetBytes(data);
             var mess_hash = hasher.ComputeHash(byteData);
 
             return Convert.ToBase64String(mess_hash);

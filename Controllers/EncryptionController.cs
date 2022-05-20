@@ -79,10 +79,11 @@ namespace Backend.Controllers
         {
             try
             {
+                
                 SignedData result = new SignedData();
                 var signature = _encryptionServices.SignData(KeyName, data);
                 result.DataRaw = data;
-                result.DataBase64 = Convert.ToBase64String(Encoding.ASCII.GetBytes(data));
+                result.DataBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(data));
                 result.DigitalSignatureBase64 = signature;
                 result.KeyName = KeyName;
                 result.isPrivate = false;

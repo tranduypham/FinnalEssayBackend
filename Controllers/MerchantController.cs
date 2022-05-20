@@ -69,15 +69,15 @@ namespace Backend.Controllers
         }
 
         [HttpPost("Try_Decrypt_Banking_Info")]
-        public ActionResult<BankingInfoDto> PostBankingInfoDto(string encBankInfo, string KeyName)
+        public ActionResult<BankingInfoDto> PostBankingInfoDto([FromHeader]string encBankInfo)
         {
             try
             {
-                return DecryptBankInfo(encBankInfo, KeyName, "client_bank");
+                return Ok(DecryptBankInfo(encBankInfo, "merchant", "client_bank"));
             }
             catch (Exception e)
             {
-                return null;
+                return BadRequest();
             }
         }
 

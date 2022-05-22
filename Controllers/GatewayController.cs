@@ -150,7 +150,7 @@ namespace Backend.Controllers
                             return Ok(serverReply);
 
                         }
-                    case "clientverify":
+                    case "merchantverify":
                         {
                             var serverReply = this.Encrypt_Reply(SessionID, cipherMess, (message) =>
                             {
@@ -162,13 +162,13 @@ namespace Backend.Controllers
                                 // invoice = invoice.Substring(1, invoice.Length - 2 ).ToString();
                                 Console.WriteLine(@"thong tin don hang {0}{1}", invoice, Environment.NewLine);
                                 var signature_valid = _enc.VerifySignature(
-                                    "client",
+                                    "merchant",
                                     invoice,
                                     message.Trim()
                                 );
 
                                 Console.WriteLine("Signature Verify: {0}", signature_valid == true ? "true" : "false");
-                                return "Get client signature, signature validity: " + signature_valid;
+                                return "Get merchant signature, signature validity: " + signature_valid;
                             });
                             return Ok(serverReply);
 

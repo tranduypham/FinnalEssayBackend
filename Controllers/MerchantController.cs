@@ -11,6 +11,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Backend.DTO;
 using System.Text;
+using System.Text.Encodings.Web;
 
 namespace Backend.Controllers
 {
@@ -85,6 +86,12 @@ namespace Backend.Controllers
         [HttpPost("SendInvoice")]
         public ActionResult<Object> PostInvoiceToMerchant(PaymentInfo PI)
         {
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                WriteIndented = true
+            };
             Console.WriteLine(PI.Invoice);
             // Phải trả về những thông tin sau
             // (PI + BankingInfo(Merchant))Enc(PublicKey(CustomerBank))  +  (Invoice)Enc(PublicKey(Customer))
@@ -106,9 +113,12 @@ namespace Backend.Controllers
                 ),
                 true
             );
+            var tmp = PI.Invoice;
+            var merchant_SignInvoice = _enc.SignData("merchant", PI.Invoice);
             return Ok(new
             {
                 PI = encPI,
+                Merchant_Sign_Invoice = merchant_SignInvoice,
                 MerchantBankingInfo = encMerchantBankingInfo,
                 Invoice = encInvoice
             });

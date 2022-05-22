@@ -85,7 +85,6 @@ namespace Backend.Services.Encryption
         {
             try
             {
-                Console.WriteLine("Du lieu ky so {0}", data);
                 this.GetKeys(KeyName);
                 byte[] result;
                 byte[] byteData = Encoding.UTF8.GetBytes(data);

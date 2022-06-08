@@ -4,8 +4,6 @@ E:\Do an\Backend\bin\Debug\net6.0\Backend.exe
 E:\Do an\Backend\bin\Debug\net6.0\Backend.deps.json
 E:\Do an\Backend\bin\Debug\net6.0\Backend.runtimeconfig.json
 E:\Do an\Backend\bin\Debug\net6.0\Backend.dll
-E:\Do an\Backend\bin\Debug\net6.0\ref\Backend.dll
-E:\Do an\Backend\bin\Debug\net6.0\Backend.pdb
 E:\Do an\Backend\bin\Debug\net6.0\Humanizer.dll
 E:\Do an\Backend\bin\Debug\net6.0\Microsoft.Data.SqlClient.dll
 E:\Do an\Backend\bin\Debug\net6.0\Microsoft.EntityFrameworkCore.dll
@@ -59,3 +57,5 @@ E:\Do an\Backend\obj\Debug\net6.0\Backend.dll
 E:\Do an\Backend\obj\Debug\net6.0\ref\Backend.dll
 E:\Do an\Backend\obj\Debug\net6.0\Backend.pdb
 E:\Do an\Backend\obj\Debug\net6.0\Backend.genruntimeconfig.cache
+E:\Do an\Backend\bin\Debug\net6.0\ref\Backend.dll
+E:\Do an\Backend\bin\Debug\net6.0\Backend.pdb

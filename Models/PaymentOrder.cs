@@ -9,13 +9,13 @@ namespace Backend.Models
     {
         public int OrderInfo { get; set; }
         public string ClientVerifySignature { get; set; }
-        public string ClientBankProfileNumber { get; set; }
-        public string MerchantBankProfileNumber { get; set; }
+        public BankingInfo ClientBankProfile { get; set; }
+        public BankingInfo MerchantBankProfile { get; set; }
         public void Reset() {
             this.OrderInfo = 0;
             this.ClientVerifySignature = "";
-            this.ClientBankProfileNumber = "";
-            this.MerchantBankProfileNumber = "";
+            this.ClientBankProfile = new BankingInfo();
+            this.MerchantBankProfile = new BankingInfo();
         }
     }
 }

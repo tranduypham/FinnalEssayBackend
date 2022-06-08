@@ -17,6 +17,7 @@ namespace Backend.Models
         public DbSet<BankingInfo> BankingInfos { get; set; }
         public DbSet<SessionKeys> SessionKeys { get; set; }
         public DbSet<BankAccount> BankAccounts { get; set; }
+        public DbSet<Transaction> Transactions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -29,6 +30,8 @@ namespace Backend.Models
                         .HasForeignKey<BankingInfo>(x => x.ProfileNumber);
 
             modelBuilder.Entity<SessionKeys>().HasKey( x => x.SessionID );
+
+            modelBuilder.Entity<Transaction>().HasKey( x => x.TransactionID );
 
             SWPPSeed.Seed(modelBuilder);
         }

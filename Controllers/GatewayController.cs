@@ -13,6 +13,7 @@ using Backend.Services.Certificate;
 using Backend.Services.Encryption;
 using Backend.Services.WIMServices;
 using Microsoft.AspNetCore.Mvc;
+using static System.Net.Mime.MediaTypeNames;
 //using Backend.Models;
 
 namespace Backend.Controllers
@@ -24,12 +25,22 @@ namespace Backend.Controllers
         ICertificateServices _cert;
         IWimServices _wim;
         IEncryptionServices _enc;
-        public GatewayController(ICertificateServices cert, IWimServices wim, IEncryptionServices enc)
+        IHttpClientFactory _httpClient;
+        public GatewayController(ICertificateServices cert, IWimServices wim, IEncryptionServices enc, IHttpClientFactory httpClient)
         {
             _cert = cert;
             _wim = wim;
             _enc = enc;
+            _httpClient = httpClient;
         }
+
+        [HttpGet("Test")]
+        public async Task<ActionResult<string>> GetTModel(string method, string uri, string data)
+        {
+            return await createRequest(method, uri, data);
+        }
+
+
 
         [HttpGet("RequestWTLS")]
         public ActionResult<ReplyClientWTLSRequest_ServerHello> ReplyClient_ServerHello(string ClientRand)
@@ -96,26 +107,85 @@ namespace Backend.Controllers
             // return Ok(Enc_reply);
         }
 
-        // [HttpPost("Secure_Link_Communicatioin")]
-        // public ActionResult<string> SecureCommunicate([FromHeader] Guid SessionID, [FromQuery] string cipherMess)
-        // {
-        //     try
-        //     {
-        //         var serverReply = this.Encrypt_Reply(SessionID, cipherMess,() => {
-        //             return cipherMess;
-        //         });
-        //         return Ok(serverReply);
-        //     }
-        //     catch (Exception e)
-        //     {
-        //         Console.WriteLine(e.Message);
-        //         return BadRequest();
-        //     }
-        // }
 
         private static PaymentOrder PO = new PaymentOrder();
         private static string paymentInfoJSON = "";
 
+        const string BANK_CODE = "1255070770448";
+        [HttpPost("Verify_client")]
+        public ActionResult<bool> VerifyClientAccount(BankAccountDto clientAccount)
+        {
+            try
+            {
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                    WriteIndented = true
+                };
+                var result = createRequest(
+                    "Post",
+                    "\\api\\ClientBank\\verify_bank_account",
+                    JsonSerializer.Serialize(clientAccount, options)
+                ).Result;
+                if (result == "true")
+                {
+
+                    return Ok(true);
+                }
+                throw new Exception("Wrong validate");
+            }
+            catch (Exception e)
+            {
+                return BadRequest(false);
+            }
+        }
+
+        [HttpPost("Verify_client_signature")]
+        public ActionResult<bool> VerifyClientSignature([FromQuery] string signature)
+        {
+            try
+            {
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                    WriteIndented = true
+                };
+                var send = new SignedData_Verify
+                {
+                    KeyName = "client",
+                    DataRaw = "",
+                    SignatureBase64 = signature
+                };
+                var result = createRequest(
+                    "post",
+                    "\\api\\ClientBank\\verify_client_signature",
+                    JsonSerializer.Serialize(send, options)
+                ).Result;
+                if (result == "true")
+                {
+                    var deposit = createRequest(
+                        "Post",
+                        "\\api\\ClientBank\\make_withdraw",
+                        paymentInfoJSON
+                    ).Result;
+                    // Console.WriteLine(deposit);
+                    // Console.WriteLine((Request.IsHttps ? "https://" : "http://") + Request.Host);
+                    if (deposit == "true"){
+                        return Ok(true);
+                    }
+                }
+                throw new Exception("Wrong validate");
+            }
+            catch (Exception e)
+            {
+                return BadRequest(false);
+            }
+        }
+
+
+        static string orederToVerify = "";
         [HttpPost("Secure_Link_Communicatioin")]
         public ActionResult<string> SecureCommunicate([FromHeader] Guid SessionID, [FromQuery] string cipherMess, [FromHeader] string Process)
         {
@@ -131,73 +201,81 @@ namespace Backend.Controllers
                 {
                     case "paymentinfo":
                         {
-                            PO.Reset();
                             var serverReply = this.Encrypt_Reply(SessionID, cipherMess, (message) =>
                             {
-                                var pi = _enc.DecryptData(
-                                    "client_bank",
-                                    message,
-                                    false
-                                );
-                                paymentInfoJSON = pi;
-
-                                var paymentInfo = JsonSerializer.Deserialize<PaymentInfo>(pi, options);
-                                Console.WriteLine("PI: {0}", pi);
-                                Console.WriteLine("OrderInfo: {0}", paymentInfo.OrderInfo);
-                                PO.OrderInfo = paymentInfo.OrderInfo;
-                                return "Get Payment info, total amount is " + paymentInfo.OrderInfo;
+                                try
+                                {
+                                    var sendData = new EncryptDataDto
+                                    {
+                                        EncData = message
+                                    };
+                                    // var temp = message.Replace("\\", "");
+                                    var result = createRequest(
+                                        "POST",
+                                        "\\api\\ClientBank\\payment_request_info",
+                                        JsonSerializer.Serialize(sendData, options)
+                                    ).Result;
+                                    paymentInfoJSON = result;
+                                    var info = JsonSerializer.Deserialize<VerifyOrder>(result, options);
+                                    PO.OrderInfo = info.Amount;
+                                    return result;
+                                }
+                                catch (Exception e)
+                                {
+                                    throw new Exception(e.Message);
+                                    
+                                }
                             });
                             return Ok(serverReply);
 
                         }
                     case "merchantverify":
                         {
+
                             var serverReply = this.Encrypt_Reply(SessionID, cipherMess, (message) =>
                             {
-                                
-                                var temp = JsonSerializer.Deserialize<PaymentInfo>(paymentInfoJSON, options);
+                                try
+                                {
+                                    var sendData = new SignedData_Verify
+                                    {
+                                        KeyName = "",
+                                        DataRaw = paymentInfoJSON,
+                                        SignatureBase64 = message
+                                    };
+                                    // var temp = message.Replace("\\", "");
+                                    var result = createRequest(
+                                        "POST",
+                                        "\\api\\ClientBank\\verify_payment_request_info",
+                                        JsonSerializer.Serialize(sendData, options)
+                                    ).Result;
 
-                                Console.WriteLine("chu ky {0}{1}", message.Trim(), Environment.NewLine);
-                                var invoice = temp.Invoice;
-                                // invoice = invoice.Substring(1, invoice.Length - 2 ).ToString();
-                                Console.WriteLine(@"thong tin don hang {0}{1}", invoice, Environment.NewLine);
-                                var signature_valid = _enc.VerifySignature(
-                                    "merchant",
-                                    invoice,
-                                    message.Trim()
-                                );
-
-                                Console.WriteLine("Signature Verify: {0}", signature_valid == true ? "true" : "false");
-                                return "Get merchant signature, signature validity: " + signature_valid;
+                                    return "Get merchant signature, signature validity: " + result;
+                                }
+                                catch (Exception e)
+                                {
+                                    throw new Exception(e.Message);
+                                }
                             });
                             return Ok(serverReply);
 
                         }
                     case "cbankinfo":
                         {
+                            PO.Reset();
                             var serverReply = this.Encrypt_Reply(SessionID, cipherMess, (message) =>
                             {
-                                
-                                var temp = JsonSerializer.Deserialize<BankingInfoDto>(message, options);
-                                var info = temp.BankingInfo;
-                                var info_serialize = JsonSerializer.Serialize(info);
-                                var sign = temp.Signature;
-
-                                
-                                // invoice = invoice.Substring(1, invoice.Length - 2 ).ToString();
-                                Console.WriteLine("thong tin ngan hang {0}{1}", info, Environment.NewLine);
-                                var signature_valid = _enc.VerifySignature(
-                                    "client_bank",
-                                    info_serialize.Trim(),
-                                    sign.Trim()
-                                );
-
-                                Console.WriteLine("Signature Verify: {0}", signature_valid == true ? "true" : "false");
-                                if(signature_valid){
-                                    PO.ClientBankProfileNumber = info.ProfileNumber;
-                                    return "Get Client Banking Info, Client Bank Profile Recieve: " +  PO.ClientBankProfileNumber;
+                                try
+                                {
+                                    // var temp = message.Replace("\\", "");
+                                    var result = createRequest("POST", "\\api\\ClientBank\\clien_bank_info", message).Result;
+                                    var info = JsonSerializer.Deserialize<BankingInfo>(result, options);
+                                    PO.ClientBankProfile = info;
+                                    return "Get Client Banking Info, Client Bank Profile Recieve: " + info.ProfileNumber;
                                 }
-                                return "Get Client Banking Info, Invalid information";
+                                catch (Exception e)
+                                {
+                                    return "Get Client Banking Info, Invalid information" + e.Message;
+                                }
                             });
                             return Ok(serverReply);
 
@@ -206,38 +284,26 @@ namespace Backend.Controllers
                         {
                             var serverReply = this.Encrypt_Reply(SessionID, cipherMess, (message) =>
                             {
-                                var temp = JsonSerializer.Deserialize<BankingInfoDto>(message, options);
-                                var info = temp.BankingInfo;
-                                var info_serialize = JsonSerializer.Serialize(info);
-                                var sign = temp.Signature;
-
-                                
-                                // invoice = invoice.Substring(1, invoice.Length - 2 ).ToString();
-                                Console.WriteLine("thong tin ngan hang merchant {0}{1}", info, Environment.NewLine);
-                                var signature_valid = _enc.VerifySignature(
-                                    "merchant_bank",
-                                    info_serialize.Trim(),
-                                    sign.Trim()
-                                );
-
-                                Console.WriteLine("Signature Verify: {0}", signature_valid == true ? "true" : "false");
-                                if(signature_valid){
-                                    PO.MerchantBankProfileNumber = info.ProfileNumber;
-                                    return "Get Client Banking Info, Client Bank Profile Recieve: " +  PO.MerchantBankProfileNumber;
+                                try
+                                {
+                                    // var temp = message.Replace("\\", "");
+                                    var result = createRequest("POST", "\\api\\ClientBank\\merchant_bank_info", message).Result;
+                                    var info = JsonSerializer.Deserialize<BankingInfo>(result, options);
+                                    PO.MerchantBankProfile = info;
+                                    return "Get Client Banking Info, Client Bank Profile Recieve: " + info.ProfileNumber;
                                 }
-                                return "Get Client Banking Info, Invalid information";
+                                catch (Exception e)
+                                {
+                                    return "Get Client Banking Info, Invalid information" + e.Message;
+                                }
+                                
                             });
                             return Ok(serverReply);
 
                         }
                     default:
                         {
-                            // foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(PO))
-                            // {
-                            //     string name = descriptor.Name;
-                            //     object value = descriptor.GetValue(PO);
-                            //     Console.WriteLine("{0} = {1}", name, value);
-                            // }
+
                             throw new Exception("Process not yet declare");
                         }
                 }
@@ -245,11 +311,44 @@ namespace Backend.Controllers
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
-                return BadRequest();
+                return BadRequest(e.Message);
             }
         }
 
-
+        private async Task<string> createRequest(string method, string uri, string data)
+        {
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                WriteIndented = true
+            };
+            using var httpClient = _httpClient.CreateClient();
+            // httpClient.BaseAddress = new Uri(HttpContext.Request.Host.ToString());
+            // BankingInfoDto temp = JsonSerializer.Deserialize<BankingInfoDto>(data, options) ?? throw new Exception("Sai doan nay");
+            httpClient.BaseAddress = new Uri("https://localhost:7109");
+            var requestData = new StringContent(
+                data,
+                Encoding.UTF8,
+                Application.Json
+            );
+            switch (method.ToLower())
+            {
+                case "get":
+                    {
+                        return await httpClient.GetAsync(uri).Result.Content.ReadAsStringAsync();
+                    }
+                case "post":
+                    {
+                        var postResult = await httpClient.PostAsync(uri, requestData).Result.Content.ReadAsStringAsync();
+                        return postResult;
+                    }
+                default:
+                    {
+                        throw new Exception("Request to Bank Fail");
+                    }
+            }
+        }
         private string Encrypt_Reply(Guid SessionID, string client_cipher_mess, Func<string, string>? clientReplyMethod)
         {
             var messFromClient = this.SymDecrypt(client_cipher_mess, new AESDto { KeyName = "client", SessionID = SessionID });
@@ -328,5 +427,16 @@ namespace Backend.Controllers
             }
         }
 
+        [HttpGet("bank_statement")]
+        public ActionResult<IEnumerable<string>> GetStatement()
+        {
+            var result = this.createRequest(
+                "post",
+                "\\api\\ClientBank\\account_state",
+                ""
+            ).Result;
+            return Ok(result);
+        }
+        
     }
 }

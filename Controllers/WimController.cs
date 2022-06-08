@@ -27,13 +27,13 @@ namespace Backend.Controllers
         const string BANK_CODE = "1255070770448";
 
         [HttpPost("GetClientBankInfo")]
-        public ActionResult<string> GetClientBankInfo([FromBody]PinVerify PIN, string bankAccount)
+        public ActionResult<string> GetClientBankInfo([FromBody]PinVerify PIN)
         {
             if(PIN.PIN.Equals(PIN_CODE)){
-                if(bankAccount.Equals(BANK_CODE)){
+                // if(bankAccount.Equals(BANK_CODE)){
                     return Ok(new {clientEncBankInfoBase64 = _wim.GetBankingInfo("client")});
-                }
-                return BadRequest(new {mess = "Bank account not found"});
+                // }
+                // return BadRequest(new {mess = "Bank account not found"});
             }
             return BadRequest(new {mess = "Wrong PIN code"});
         }

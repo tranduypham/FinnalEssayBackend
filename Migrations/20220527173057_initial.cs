@@ -38,11 +38,27 @@ namespace Backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Transactions",
+                columns: table => new
+                {
+                    TransactionID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Payer = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Payee = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Amount = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Transactions", x => x.TransactionID);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "BankingInfos",
                 columns: table => new
                 {
                     BankId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     BankLocation = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    BankWebsite = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ProfileNumber = table.Column<string>(type: "nvarchar(450)", nullable: false)
                 },
                 constraints: table =>
@@ -68,13 +84,13 @@ namespace Backend.Migrations
 
             migrationBuilder.InsertData(
                 table: "BankingInfos",
-                columns: new[] { "BankId", "BankLocation", "ProfileNumber" },
-                values: new object[] { new Guid("40822906-84f0-4dae-b8f0-696fce457db8"), "Dong Da, Ha Noi, Ngan Hang co phan quan doi MB Bank, Merchant", "7467811997849" });
+                columns: new[] { "BankId", "BankLocation", "BankWebsite", "Name", "ProfileNumber" },
+                values: new object[] { new Guid("40822906-84f0-4dae-b8f0-696fce457db8"), "Dong Da, Ha Noi, Ngan Hang co phan quan doi MB Bank, Merchant", "www.merchant.com", "Merchant Duy", "7467811997849" });
 
             migrationBuilder.InsertData(
                 table: "BankingInfos",
-                columns: new[] { "BankId", "BankLocation", "ProfileNumber" },
-                values: new object[] { new Guid("dbe552e4-37de-4ffb-b920-ab7caa9ebe0d"), "Dong Da, Ha Noi, Ngan Hang co phan quan doi MB Bank, Client", "1255070770448" });
+                columns: new[] { "BankId", "BankLocation", "BankWebsite", "Name", "ProfileNumber" },
+                values: new object[] { new Guid("dbe552e4-37de-4ffb-b920-ab7caa9ebe0d"), "Dong Da, Ha Noi, Ngan Hang co phan quan doi MB Bank, Client", "www.client.com", "Client Duy", "1255070770448" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_BankingInfos_ProfileNumber",
@@ -90,6 +106,9 @@ namespace Backend.Migrations
 
             migrationBuilder.DropTable(
                 name: "SessionKeys");
+
+            migrationBuilder.DropTable(
+                name: "Transactions");
 
             migrationBuilder.DropTable(
                 name: "BankAccounts");

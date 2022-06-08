@@ -31,6 +31,14 @@ namespace Backend.Migrations
                     b.Property<string>("BankLocation")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("BankWebsite")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ProfileNumber")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -47,12 +55,16 @@ namespace Backend.Migrations
                         {
                             BankId = new Guid("40822906-84f0-4dae-b8f0-696fce457db8"),
                             BankLocation = "Dong Da, Ha Noi, Ngan Hang co phan quan doi MB Bank, Merchant",
+                            BankWebsite = "www.merchant.com",
+                            Name = "Merchant Duy",
                             ProfileNumber = "7467811997849"
                         },
                         new
                         {
                             BankId = new Guid("dbe552e4-37de-4ffb-b920-ab7caa9ebe0d"),
                             BankLocation = "Dong Da, Ha Noi, Ngan Hang co phan quan doi MB Bank, Client",
+                            BankWebsite = "www.client.com",
+                            Name = "Client Duy",
                             ProfileNumber = "1255070770448"
                         });
                 });
@@ -113,6 +125,28 @@ namespace Backend.Migrations
                     b.HasKey("SessionID");
 
                     b.ToTable("SessionKeys");
+                });
+
+            modelBuilder.Entity("Backend.Repository.Entity.Transaction", b =>
+                {
+                    b.Property<Guid>("TransactionID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Amount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Payee")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Payer")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("TransactionID");
+
+                    b.ToTable("Transactions");
                 });
 
             modelBuilder.Entity("Backend.Models.BankingInfo", b =>

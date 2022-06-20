@@ -112,6 +112,19 @@ namespace Backend.Controllers
             return utf8_string;
         }
 
+        
+        static bool isLogin = false; 
+        [HttpPost("VerifyUser")]
+        public ActionResult<bool> PostTModel([FromBody] PinVerify pin)
+        {
+            if(!isLogin){
+                if (pin.PIN == "123456"){
+                    isLogin = true;
+                }
+            }
+            return isLogin;
+        }
+
         [HttpPost("Try_Decrypt_Banking_Info")]
         public ActionResult<BankingInfoDto> PostBankingInfoDto([FromHeader] string encBankInfo)
         {
